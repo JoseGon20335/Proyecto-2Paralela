@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <openssl/des.h>
 
-void decrypt(long key, char *ciph, int len) {
+void myDecrypt(long key, char *ciph, int len) {
     DES_key_schedule schedule;
     DES_cblock keyBlock;
 
@@ -21,7 +21,7 @@ void decrypt(long key, char *ciph, int len) {
     DES_ecb_encrypt((DES_cblock *)ciph, (DES_cblock *)ciph, &schedule, DES_DECRYPT);
 }
 
-void encrypt(long key, char *ciph, int len) {
+void myEncrypt(long key, char *ciph, int len) {
     DES_key_schedule schedule;
     DES_cblock keyBlock;
 
@@ -34,16 +34,16 @@ void encrypt(long key, char *ciph, int len) {
     DES_ecb_encrypt((DES_cblock *)ciph, (DES_cblock *)ciph, &schedule, DES_ENCRYPT);
 }
 
-char search[] = " the ";
+char search[] = " es una prueba de ";
 int tryKey(long key, char *ciph, int len){
   char temp[len+1];
   memcpy(temp, ciph, len);
   temp[len]=0;
-  decrypt(key, temp, len);
+  myDecrypt(key, temp, len);
   return strstr((char *)temp, search) != NULL;
 }
 
-unsigned char cipher[] = {108, 245, 65, 63, 125, 200, 150, 66, 17, 170, 207, 170, 34, 31, 70, 215, 0};
+unsigned char cipher[] = {50, -12, -2, -82, -108, -75, -47, 45, 117, 110, 97, 32, 112, 114, 117, 101, 98, 97, 32, 100, 101, 32, 112, 114, 111, 121, 101, 99, 116, 111, 32, 50, 0};
 int main(int argc, char *argv[]){ //char **argv
   int N, id;
   long upper = (1L <<56); //upper bound DES keys 2^56
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]){ //char **argv
 
   if(id==0){
     MPI_Wait(&req, &st);
-    decrypt(found, (char *)cipher, ciphlen);
+    myDecrypt(found, (char *)cipher, ciphlen);
     printf("%li %s\n", found, cipher);
   }
 
