@@ -21,19 +21,6 @@ void myDecrypt(long key, char *ciph, int len) {
     DES_ecb_encrypt((DES_cblock *)ciph, (DES_cblock *)ciph, &schedule, DES_DECRYPT);
 }
 
-void myEncrypt(long key, char *ciph, int len) {
-    DES_key_schedule schedule;
-    DES_cblock keyBlock;
-
-    // Convert long key to DES_cblock
-    memcpy(&keyBlock, &key, sizeof(keyBlock));
-
-    DES_set_odd_parity(&keyBlock);
-    DES_set_key_checked(&keyBlock, &schedule);
-    
-    DES_ecb_encrypt((DES_cblock *)ciph, (DES_cblock *)ciph, &schedule, DES_ENCRYPT);
-}
-
 char search[] = " es una prueba de ";
 int tryKey(long key, char *ciph, int len){
     char temp[len+1];
@@ -44,7 +31,7 @@ int tryKey(long key, char *ciph, int len){
 }
 
 unsigned char cipher[] = {50, -12, -2, -82, -108, -75, -47, 45, 117, 110, 97, 32, 112, 114, 117, 101, 98, 97, 32, 100, 101, 32, 112, 114, 111, 121, 101, 99, 116, 111, 32, 50, 0};
-int main(int argc, char *argv[]){ //char **argv
+int main(int argc, char *argv[]){ //char **argv   
     int N, id;
     long upper = (1L <<56); //upper bound DES keys 2^56
     long mylower, myupper;
@@ -57,6 +44,30 @@ int main(int argc, char *argv[]){ //char **argv
     MPI_Init(NULL, NULL);
     MPI_Comm_size(comm, &N);
     MPI_Comm_rank(comm, &id);
+    
+    if (argc != 2) {
+        printf("Usage: ./bruteforce <filename>\n");
+        return 1;
+    }
+    
+    if (id == 0) {
+        char *filename = argv[1];
+        FILE *fp = fopen(filename, "r");
+        fseek(fp, 0L, SEEK_END);
+        int fsize = ftell(fp);
+        fseek(fp, 0L, SEEK_SET);
+
+        char *buffer = malloc(fsize);
+        fread(buffer, fsize, 1, fp);
+        fclose(fp);
+
+        // Read each byte from file into cipher array
+        for (int i = 0; i < fsize; i++) {
+            cipher[i] = buffer[i];
+        }
+
+        printf("Ciphertext: %s\n", cipher);
+    }
 
     long range_per_node = upper / N;
     mylower = range_per_node * id;
