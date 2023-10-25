@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 
     char *key = argv[1];
     char *filename = argv[2];
-    long keyLong;
+    double keyLong;
 
     // Convert each character in key to long
     for (int i = 0; i < strlen(key); i++) {
@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
 
     myEncrypt(keyLong, buffer, fsize);
 
+    printf("Ciphertext: %s\n", buffer);
     // print encrypted file to console
     for (int i = 0; i < fsize; i++) {
         printf("%d ", buffer[i]);

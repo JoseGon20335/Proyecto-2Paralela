@@ -45,12 +45,12 @@ int main(int argc, char *argv[]){ //char **argv
     MPI_Comm_size(comm, &N);
     MPI_Comm_rank(comm, &id);
     
-    if (argc != 2) {
-        printf("Usage: ./bruteforce <filename>\n");
-        return 1;
-    }
-    
     if (id == 0) {
+        if (argc != 2) {
+            printf("Usage: ./bruteforce <filename>\n");
+            return 1;
+        }
+
         char *filename = argv[1];
         FILE *fp = fopen(filename, "r");
         fseek(fp, 0L, SEEK_END);
@@ -66,7 +66,12 @@ int main(int argc, char *argv[]){ //char **argv
             cipher[i] = buffer[i];
         }
 
-        printf("Ciphertext: %s\n", cipher);
+        ciphlen = strlen(cipher);
+
+        for (int i = 0; i < ciphlen; i++) {
+            printf("%d ", cipher[i]);
+        }
+        printf("\nCiphertext: %s\n", cipher);
     }
 
     long range_per_node = upper / N;
