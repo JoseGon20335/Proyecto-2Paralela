@@ -40,12 +40,16 @@ int main(int argc, char *argv[]){ //char **argv
     int flag;
     int ciphlen = strlen(cipher);
     MPI_Comm comm = MPI_COMM_WORLD;
+    double start, end;
 
     MPI_Init(NULL, NULL);
     MPI_Comm_size(comm, &N);
     MPI_Comm_rank(comm, &id);
     
     if (id == 0) {
+        printf("---------- Decrypting file ----------\n");
+        start = MPI_Wtime();
+
         if (argc != 2) {
             printf("Usage: ./bruteforce <filename>\n");
             return 1;
@@ -68,10 +72,7 @@ int main(int argc, char *argv[]){ //char **argv
 
         ciphlen = strlen(cipher);
 
-        for (int i = 0; i < ciphlen; i++) {
-            printf("%d ", cipher[i]);
-        }
-        printf("\nCiphertext: %s\n", cipher);
+        printf("Encrypted text: %s\n", cipher);
     }
 
     long range_per_node = upper / N;
@@ -102,7 +103,11 @@ int main(int argc, char *argv[]){ //char **argv
     if(id==0){
         MPI_Wait(&req, &st);
         myDecrypt(found, (char *)cipher, ciphlen);
-        printf("%li - %s\n", found, cipher);
+        printf("Decrypted text: %s\n", cipher);
+        printf("Key: %ld\n", found);
+
+        end = MPI_Wtime();
+        printf("Time: %f ms\n", (end - start) * 1000);
     }
 
     MPI_Finalize();

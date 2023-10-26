@@ -25,12 +25,12 @@ int main(int argc, char *argv[]) {
 
     char *key = argv[1];
     char *filename = argv[2];
-    double keyLong;
+    long keyLong;
+    
+    printf("---------- Encrypting file ----------\n");
 
-    // Convert each character in key to long
-    for (int i = 0; i < strlen(key); i++) {
-        keyLong += key[i];
-    }
+    sscanf(key, "%ld", &keyLong);
+    printf("Key: %ld\n", keyLong);
 
     FILE *fp = fopen(filename, "r");
     fseek(fp, 0L, SEEK_END);
@@ -43,16 +43,14 @@ int main(int argc, char *argv[]) {
 
     myEncrypt(keyLong, buffer, fsize);
 
-    printf("Ciphertext: %s\n", buffer);
-    // print encrypted file to console
-    for (int i = 0; i < fsize; i++) {
-        printf("%d ", buffer[i]);
-    }
+    printf("Encrypted text: %s\n", buffer);
 
     // Write encrypted file to file
     fp = fopen("encrypted.txt", "w");
     fwrite(buffer, fsize, 1, fp);
     fclose(fp);
+
+    printf("Saved encrypted file to encrypted.txt\n");
 
     return 0;
 }
