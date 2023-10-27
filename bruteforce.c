@@ -18,7 +18,9 @@ void myDecrypt(long key, char *ciph, int len) {
     DES_set_odd_parity(&keyBlock);
     DES_set_key_checked(&keyBlock, &schedule);
     
-    DES_ecb_encrypt((DES_cblock *)ciph, (DES_cblock *)ciph, &schedule, DES_DECRYPT);
+    for (int i = 0; i < len; i += 8) {
+        DES_ecb_encrypt((DES_cblock *)(ciph + i), (DES_cblock *)(ciph + i), &schedule, DES_DECRYPT);
+    }
 }
 
 char search[] = " es una prueba de ";
@@ -30,7 +32,7 @@ int tryKey(long key, char *ciph, int len){
     return strstr((char *)temp, search) != NULL;
 }
 
-unsigned char cipher[] = {50, -12, -2, -82, -108, -75, -47, 45, 117, 110, 97, 32, 112, 114, 117, 101, 98, 97, 32, 100, 101, 32, 112, 114, 111, 121, 101, 99, 116, 111, 32, 50, 0};
+unsigned char cipher[0];
 int main(int argc, char *argv[]){ //char **argv   
     int N, id;
     long upper = (1L <<56); //upper bound DES keys 2^56

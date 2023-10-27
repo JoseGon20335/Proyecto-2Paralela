@@ -14,7 +14,9 @@ void myEncrypt(long key, char *ciph, int len) {
     DES_set_odd_parity(&keyBlock);
     DES_set_key_checked(&keyBlock, &schedule);
     
-    DES_ecb_encrypt((DES_cblock *)ciph, (DES_cblock *)ciph, &schedule, DES_ENCRYPT);
+    for (int i = 0; i < len; i += 8) {
+        DES_ecb_encrypt((DES_cblock *)(ciph + i), (DES_cblock *)(ciph + i), &schedule, DES_ENCRYPT);
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -40,6 +42,8 @@ int main(int argc, char *argv[]) {
     char *buffer = malloc(fsize);
     fread(buffer, fsize, 1, fp);
     fclose(fp);
+
+    printf("Original text: %s\n", buffer);
 
     myEncrypt(keyLong, buffer, fsize);
 
