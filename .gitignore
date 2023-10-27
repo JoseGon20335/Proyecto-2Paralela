@@ -1,6 +1,6 @@
 
 .DS_Store
 .vscode/settings.json
-bruteforce.dSYM/Contents/Info.plist
-bruteforce.dSYM/Contents/Resources/DWARF/bruteforce
-bruteforce.dSYM/Contents/Resources/Relocations/aarch64/bruteforce.yml
+bruteforce.dSYM/*
+parallel.dSYM/*
+divideAndConquer.dSYM/*

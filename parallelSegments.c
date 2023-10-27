@@ -12,6 +12,7 @@ José Miguel Gonzales
 #include <mpi.h>
 #include <unistd.h>
 #include <openssl/des.h>
+#include "/opt/homebrew/Cellar/libomp/16.0.6/include/omp.h"
 
 /* 
 DESCRIPCIÓN:
@@ -65,52 +66,38 @@ int tryKey(long key, char *ciph, int len){
     return strstr((char *)temp, search) != NULL;
 }
 
+long parallelSearch(long lower, long upper, int ciphlen, char *cipher){
+    long found = 0;
+
+    # pragma omp parallel for
+    for (long i = lower; i < upper; i++) {
+        if (tryKey(i, (char *)cipher, ciphlen)) {
+            found = i;
+        }
+    }
+
+    return found;
+}
+
 void mySearch(long mylower, long myupper, int N, int ciphlen, char *cipher, MPI_Request *req){
     long found = 0;
     int ready = 0;
 
-    long lowerA;
-    long upperA;
-    long lowerB;
-    long upperB;
+    long lower = mylower;
+    long upper = mylower + 1000;
 
-    // Divide space of keys between nodes
-    long thisRange = myupper - mylower;
-    lowerA = mylower;
-    upperA = mylower + thisRange / 2;
-    lowerB = upperA + 1;
-    upperB = myupper;
-    
-    // Primera mitad de menor a mayor
-    for(long i = lowerA; i < upperA; ++i){
-        // Verificar si se encontró la llave
+    while (upper <= myupper && found == 0) {
         MPI_Test(req, &ready, MPI_STATUS_IGNORE);
         if(ready) break;  //ya encontraron, salir
+        
+        found = parallelSearch(lower, upper, ciphlen, cipher);
 
-        // Probar llave
-        if(tryKey(i, (char *)cipher, ciphlen)){
-            found = i;
-            for(int node=0; node<N; node++){
+        if (found != 0) {
+            for(int node = 0; node<N; node++){
                 MPI_Send(&found, 1, MPI_LONG, node, 0, MPI_COMM_WORLD);
             }
         }
     }
-
-    // Segunda mitad de mayor a menor
-    for(long i = upperB; i > lowerB; --i){
-        // Verificar si se encontró la llave
-        MPI_Test(req, &ready, MPI_STATUS_IGNORE);
-        if(ready) break;  //ya encontraron, salir
-
-        // Probar llave
-        if(tryKey(i, (char *)cipher, ciphlen)){
-            found = i;
-            for(int node=0; node<N; node++){
-                MPI_Send(&found, 1, MPI_LONG, node, 0, MPI_COMM_WORLD);
-            }
-        }
-    }
-    
 }
 
 unsigned char cipher[0];
