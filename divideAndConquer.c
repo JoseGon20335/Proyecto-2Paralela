@@ -65,6 +65,26 @@ int tryKey(long key, char *ciph, int len){
     return strstr((char *)temp, search) != NULL;
 }
 
+void mySearch(long mylower, long myupper, int N, int ciphlen, char *cipher, MPI_Request *req){
+    long found = 0;
+    int ready = 0;
+
+    // Probar llaves hasta encontrar la correcta
+    for(long i = mylower; i < myupper; ++i){
+        // Verificar si se encontró la llave
+        MPI_Test(req, &ready, MPI_STATUS_IGNORE);
+        if(ready) break;  //ya encontraron, salir
+
+        // Probar llave
+        if(tryKey(i, (char *)cipher, ciphlen)){
+            found = i;
+            for(int node=0; node<N; node++){
+                MPI_Send(&found, 1, MPI_LONG, node, 0, MPI_COMM_WORLD);
+            }
+        }
+    }
+}
+
 unsigned char cipher[0];
 
 /* 
@@ -135,20 +155,7 @@ int main(int argc, char *argv[]){
 
     MPI_Irecv(&found, 1, MPI_LONG, MPI_ANY_SOURCE, MPI_ANY_TAG, comm, &req);
 
-    // Probar llaves hasta encontrar la correcta
-    for(long i = mylower; i<myupper; ++i){
-        // Verificar si se encontró la llave
-        MPI_Test(&req, &ready, MPI_STATUS_IGNORE);
-        if(ready) break;  //ya encontraron, salir
-
-        // Probar llave
-        if(tryKey(i, (char *)cipher, ciphlen)){
-            found = i;
-            for(int node=0; node<N; node++){
-                MPI_Send(&found, 1, MPI_LONG, node, 0, MPI_COMM_WORLD);
-            }
-        }
-    }
+    mySearch(mylower, myupper, N, ciphlen, cipher, &req);
 
     if(id==0){
         // Recibir llave encontrada
