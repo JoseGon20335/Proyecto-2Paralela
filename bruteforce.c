@@ -1,5 +1,10 @@
-//bruteforce.c
-//nota: el key usado es bastante pequenio, cuando sea random speedup variara
+/* 
+Implementación de un algoritmo de fuerza bruta para descifrar un texto cifrado con DES.
+El algoritmo recibe como parámetro el nombre del archivo que contiene el texto cifrado.
+
+Luis Santos
+José Miguel Gonzales
+ */
 
 #include <string.h>
 #include <stdio.h>
@@ -8,34 +13,72 @@
 #include <unistd.h>
 #include <openssl/des.h>
 
+/* 
+DESCRIPCIÓN:
+    Función que descifra un texto cifrado con DES.
+    Recibe como parámetros:
+        - key: llave para descifrar el texto.
+        - ciph: texto cifrado.
+        - len: tamaño del texto cifrado.
+    No retorna nada.
+ */
 void myDecrypt(long key, char *ciph, int len) {
+    // Variables para cifrado DES
     DES_key_schedule schedule;
     DES_cblock keyBlock;
 
-    // Convert long key to DES_cblock
+    // Convertir llave long a DES_cblock
     memcpy(&keyBlock, &key, sizeof(keyBlock));
     
+    // Inicializar cifrado DES
     DES_set_odd_parity(&keyBlock);
     DES_set_key_checked(&keyBlock, &schedule);
     
+    // Descifrar texto en bloques de 8 bytes (64 bits)
     for (int i = 0; i < len; i += 8) {
         DES_ecb_encrypt((DES_cblock *)(ciph + i), (DES_cblock *)(ciph + i), &schedule, DES_DECRYPT);
     }
 }
 
+/* 
+DESCRIPCIÓN:
+    Función que prueba una llave para descifrar un texto cifrado con DES.
+    Recibe como parámetros:
+        - key: llave para descifrar el texto.
+        - ciph: texto cifrado.
+        - len: tamaño del texto cifrado.
+    Retorna 1 si la llave es correcta, 0 en caso contrario.
+ */
+ */
 char search[] = " es una prueba de ";
 int tryKey(long key, char *ciph, int len){
-    char temp[len+1];
+    // Variables para cifrado DES
+    char temp[len + 1];
+
+    // Copiar texto cifrado a variable temporal
     memcpy(temp, ciph, len);
-    temp[len]=0;
+    temp[len] = 0;
+    
+    // Descifrar texto temporal
     myDecrypt(key, temp, len);
+
+    // Devolver resultado de búsqueda de texto
     return strstr((char *)temp, search) != NULL;
 }
 
 unsigned char cipher[0];
-int main(int argc, char *argv[]){ //char **argv   
+
+/* 
+DESCRIPCIÓN:
+    Función principal del programa.
+    Recibe como parámetros:
+        - argc: número de argumentos.
+        - argv: arreglo de argumentos.
+ */
+int main(int argc, char *argv[]){
+    // Variables para MPI 
     int N, id;
-    long upper = (1L <<56); //upper bound DES keys 2^56
+    long upper = (1L <<56);
     long mylower, myupper;
     MPI_Status st;
     MPI_Request req;
@@ -44,6 +87,7 @@ int main(int argc, char *argv[]){ //char **argv
     MPI_Comm comm = MPI_COMM_WORLD;
     double start, end;
 
+    // Inicializar MPI
     MPI_Init(NULL, NULL);
     MPI_Comm_size(comm, &N);
     MPI_Comm_rank(comm, &id);
@@ -57,12 +101,14 @@ int main(int argc, char *argv[]){ //char **argv
             return 1;
         }
 
+        // Leer archivo de texto cifrado
         char *filename = argv[1];
         FILE *fp = fopen(filename, "r");
         fseek(fp, 0L, SEEK_END);
         int fsize = ftell(fp);
         fseek(fp, 0L, SEEK_SET);
 
+        // Leer texto cifrado en buffer
         char *buffer = malloc(fsize);
         fread(buffer, fsize, 1, fp);
         fclose(fp);
@@ -77,11 +123,11 @@ int main(int argc, char *argv[]){ //char **argv
         printf("Encrypted text: %s\n", cipher);
     }
 
+    // Dividir espacio de búsqueda entre nodos
     long range_per_node = upper / N;
     mylower = range_per_node * id;
     myupper = range_per_node * (id+1) -1;
     if(id == N-1){
-        //compensar residuo
         myupper = upper;
     }
 
@@ -90,10 +136,13 @@ int main(int argc, char *argv[]){ //char **argv
 
     MPI_Irecv(&found, 1, MPI_LONG, MPI_ANY_SOURCE, MPI_ANY_TAG, comm, &req);
 
+    // Probar llaves hasta encontrar la correcta
     for(long i = mylower; i<myupper; ++i){
+        // Verificar si se encontró la llave
         MPI_Test(&req, &ready, MPI_STATUS_IGNORE);
         if(ready) break;  //ya encontraron, salir
 
+        // Probar llave
         if(tryKey(i, (char *)cipher, ciphlen)){
             found = i;
             for(int node=0; node<N; node++){
@@ -103,6 +152,7 @@ int main(int argc, char *argv[]){ //char **argv
     }
 
     if(id==0){
+        // Recibir llave encontrada
         MPI_Wait(&req, &st);
         myDecrypt(found, (char *)cipher, ciphlen);
         printf("Decrypted text: %s\n", cipher);
@@ -112,5 +162,6 @@ int main(int argc, char *argv[]){ //char **argv
         printf("Time: %f ms\n", (end - start) * 1000);
     }
 
+    // Finalizar MPI
     MPI_Finalize();
 }

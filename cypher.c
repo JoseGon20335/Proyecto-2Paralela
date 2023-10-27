@@ -1,9 +1,26 @@
+/* 
+Implementación de un algoritmo de cifrado con DES.
+
+Luis Santos
+José Miguel Gonzales
+ */
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <openssl/des.h>
 
+/* 
+DESCRIPCIÓN:
+    Función que cifra un texto con DES.
+    Recibe como parámetros:
+        - key: llave para cifrar el texto.
+        - ciph: texto a cifrar.
+        - len: tamaño del texto a cifrar.
+    No retorna nada.
+ */
+ */
 void myEncrypt(long key, char *ciph, int len) {
     DES_key_schedule schedule;
     DES_cblock keyBlock;
@@ -19,12 +36,18 @@ void myEncrypt(long key, char *ciph, int len) {
     }
 }
 
+/* 
+DESCRIPCIÓN:
+    Función principal del programa.
+ */
 int main(int argc, char *argv[]) {
+    // Validación de parámetros
     if (argc != 3) {
         printf("Usage: ./cypher <key> <filename>\n");
         return 1;
     }
 
+    // Obtener parámetros
     char *key = argv[1];
     char *filename = argv[2];
     long keyLong;
@@ -34,6 +57,7 @@ int main(int argc, char *argv[]) {
     sscanf(key, "%ld", &keyLong);
     printf("Key: %ld\n", keyLong);
 
+    // Leer archivo
     FILE *fp = fopen(filename, "r");
     fseek(fp, 0L, SEEK_END);
     int fsize = ftell(fp);
@@ -45,11 +69,12 @@ int main(int argc, char *argv[]) {
 
     printf("Original text: %s\n", buffer);
 
+    // Encriptar texto
     myEncrypt(keyLong, buffer, fsize);
 
     printf("Encrypted text: %s\n", buffer);
 
-    // Write encrypted file to file
+    // Guardar texto encriptado
     fp = fopen("encrypted.txt", "w");
     fwrite(buffer, fsize, 1, fp);
     fclose(fp);
