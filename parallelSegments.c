@@ -69,7 +69,7 @@ int tryKey(long key, char *ciph, int len){
 long parallelSearch(long lower, long upper, int ciphlen, char *cipher){
     long found = 0;
 
-    # pragma omp parallel for
+    # pragma omp parallel for shared(found)
     for (long i = lower; i < upper; i++) {
         if (tryKey(i, (char *)cipher, ciphlen)) {
             found = i;
@@ -96,6 +96,9 @@ void mySearch(long mylower, long myupper, int N, int ciphlen, char *cipher, MPI_
             for(int node = 0; node<N; node++){
                 MPI_Send(&found, 1, MPI_LONG, node, 0, MPI_COMM_WORLD);
             }
+        } else {
+            lower = upper;
+            upper += 1000;
         }
     }
 }
